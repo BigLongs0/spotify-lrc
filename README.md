@@ -1,59 +1,61 @@
 # spotify-lrc
 
-Baixa a letra sincronizada de uma faixa do Spotify como arquivo `.lrc`.
+Downloads the synced lyrics of a Spotify track as an `.lrc` file.
 
 Site: https://biglongs0.github.io/spotify-lrc/
 
-## Como usar
+## Usage
 
-Cole o link da faixa (`open.spotify.com/track/...`) no campo e aperte Enter. Colar o link em qualquer lugar da página também funciona. Sem link, escreva `artista - música`.
+Paste a track link (`open.spotify.com/track/...`) into the field and press Enter. Pasting the link anywhere on the page works too. Without a link, type `artist - song`.
 
-A página abre a versão com mais cópias no LRCLIB. Se ela não for a certa, o botão de versões lista as outras gravações encontradas, separadas por artista e duração. Daí é copiar ou baixar.
+The page opens the version with the most copies on LRCLIB. If that is the wrong one, the versions button lists the other recordings it found, grouped by artist. Then copy or download.
 
-Para abrir uma faixa direto, passe o ID do Spotify em `?track=`:
+To open a track directly, pass its Spotify ID in `?track=`:
 
 ```
 https://biglongs0.github.io/spotify-lrc/?track=0VjIjW4GlUZAMYd2vXMi3b
 ```
 
-## De onde vem a letra
+## Where the lyrics come from
 
-Do Spotify a página só pega o título e a capa, pelo oEmbed, que é a única rota dele que o navegador consegue ler de outro site. A letra vem do [LRCLIB](https://lrclib.net), um banco aberto de letras sincronizadas mantido pelos usuários.
+From Spotify the page only reads the title and the cover, through oEmbed, which is the only Spotify endpoint a browser can read from another site. The lyrics come from [LRCLIB](https://lrclib.net), an open database of synced lyrics kept by its users.
 
-O oEmbed não informa o artista. Em música com muito cover, a escolha automática pode cair na versão errada, e aí vale abrir a lista de versões.
+oEmbed does not return the artist. For a song with many covers, the automatic pick can land on the wrong version, and the versions list is there for that.
 
-Quando o LRCLIB só tem a letra sem tempo, sai um `.txt`.
+LRCLIB often holds the same recording many times with different durations filled in. Copies by the same artist count as one version when their lyrics match or their length is within 2 seconds.
 
-## O arquivo
+When LRCLIB only has unsynced lyrics, you get a `.txt` instead.
+
+## The file
 
 ```
-[ti:Título]
-[ar:Artista]
-[al:Álbum]
+[ti:Title]
+[ar:Artist]
+[al:Album]
 [length:03:22]
 [re:spotify-lrc]
 
-[00:13.42] primeira linha
+[00:13.42] first line
 ```
 
-A linha `[al:]` só entra quando duas cópias concordam no nome do álbum. Muitas entradas do LRCLIB trazem o nome de uma coletânea ou de uma playlist ali.
+The `[al:]` line is only written when two copies agree on the album name. Many LRCLIB entries put a compilation or playlist name there.
 
-## Rodar local
+## Running locally
 
-Não tem build. Os módulos JavaScript não carregam por `file://`, então sirva a pasta:
+There is no build step. JavaScript modules do not load from `file://`, so serve the folder:
 
 ```
 python -m http.server 8000
 ```
 
-e abra http://localhost:8000.
+and open http://localhost:8000.
 
-## Privacidade
+## Privacy
 
-O navegador fala direto com `open.spotify.com` e `lrclib.net`. Os recentes ficam no `localStorage` do seu navegador e não vão para lugar nenhum.
+The browser talks straight to `open.spotify.com` and `lrclib.net`. Recent tracks stay in your browser's `localStorage` and are not sent anywhere.
 
-O projeto não tem vínculo com o Spotify nem com o LRCLIB. O visual é o do [lph](https://lph.biglongs.cc/).
+The project is not affiliated with Spotify or LRCLIB. The look comes from [lph](https://lph.biglongs.cc/).
 
-## Licença
+## License
 
-MIT. A fonte Inter usa a SIL Open Font License, que está em `assets/fonts/LICENSE-Inter.txt`.
+MIT. The Inter font uses the SIL Open Font License, included in `assets/fonts/LICENSE-Inter.txt`.
