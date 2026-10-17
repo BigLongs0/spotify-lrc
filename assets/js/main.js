@@ -2,7 +2,7 @@ import { chrome } from './chrome.js'
 import { $, el, icon, ICON, root } from './dom.js'
 import { onLang, read, store, t } from './i18n.js'
 import { clock, file, fileName, lines } from './lrc.js'
-import { byId, cleanTitle, search, splitQuery, versions } from './lrclib.js'
+import { byId, cleanTitle, norm, search, splitQuery, versions } from './lrclib.js'
 import { Problem } from './net.js'
 import { linkKind, track, trackId } from './spotify.js'
 
@@ -79,7 +79,7 @@ function save(name, text) {
 function fileActions(v, out) {
   return [
     copyButton(out.text),
-    btn(`${t('download')} .${out.ext}`, ICON.down, () => save(fileName(v.best, out.ext), out.text), true),
+    btn(`${t('download')} .${out.ext}`, ICON.down, () => save(fileName(v, out.ext), out.text), true),
   ]
 }
 
@@ -119,9 +119,9 @@ function paint() {
       break
     case 'done': {
       const { version: v, out } = view
-      lead.textContent = v.best.trackName
-      side.textContent = `${v.best.artistName} · ${clock(v.best.duration)}`
-      say(!out ? t('instrumental') : out.ext === 'lrc' ? t('lines', lines(v.best.syncedLyrics).filter(l => l.ts).length) : t('plain'))
+      lead.textContent = v.title
+      side.textContent = [v.artistName, clock(v.duration)].filter(Boolean).join(' · ')
+      say(!out ? t('instrumental') : out.ext === 'lrc' ? t('lines', lines(out.text).filter(l => l.ts).length) : t('plain'))
       if (found.versions.length > 1) actions.append(btn(t('versions', found.versions.length), ICON.list, openPick))
       if (out) actions.append(...fileActions(v, out))
       break
@@ -164,14 +164,13 @@ function show(v) {
 function renderPicks() {
   const from = view.from
   picks.replaceChildren(...found.versions.map(v => {
-    const rec = v.best
-    const kind = v.synced ? t('synced') : rec.plainLyrics ? t('unsynced') : t('instr')
-    const other = rec.trackName !== found.title ? rec.trackName : v.album
+    const kind = v.synced ? t('synced') : v.hasText ? t('unsynced') : t('instr')
+    const other = norm(v.title) !== norm(found.title) ? v.title : v.album
     return el('button', {
       type: 'button', class: 'item', 'aria-current': String(v === from), title: t('copies', v.entries.length),
       onclick: () => show(v),
     },
-    el('span', { class: 't' }, rec.artistName),
+    el('span', { class: 't' }, v.artistName),
     other ? el('span', { class: 'by' }, other) : null,
     el('span', { class: 'leader' }),
     el('span', { class: 'meta' }, el('span', { class: 'dim' }, kind), clock(v.duration)))
@@ -227,7 +226,7 @@ async function find(text) {
     found.versions = versions(records, title)
     if (!found.versions.length) throw new Problem('none')
     history.replaceState(null, '', id ? `?track=${id}` : location.pathname)
-    show(found.versions.find(v => v.synced) ?? found.versions.find(v => v.best.plainLyrics) ?? found.versions[0])
+    show(found.versions.find(v => v.synced) ?? found.versions.find(v => v.hasText) ?? found.versions[0])
   } catch (e) {
     if (signal.aborted || e?.name === 'AbortError') return
     fail(e, retry)
@@ -274,9 +273,9 @@ function keep(list) {
 }
 
 function remember(v) {
-  const rec = v.best
-  const entry = { id: rec.id, title: rec.trackName, artist: rec.artistName, duration: rec.duration }
-  keep([entry, ...recent().filter(r => r.id !== rec.id)].slice(0, RECENT_MAX))
+  const id = v.best.id
+  const entry = { id, title: v.title, artist: v.artistName, duration: v.duration }
+  keep([entry, ...recent().filter(r => r.id !== id)].slice(0, RECENT_MAX))
 }
 
 function forget(id) {
@@ -295,7 +294,7 @@ function renderRecent(list = recent()) {
 function openViewer() {
   if (view.name !== 'done' || !view.out) return
   const { version: v, out } = view
-  viewerName.textContent = v.best.trackName
+  viewerName.textContent = v.title
   viewerMeta.textContent = side.textContent
   viewerCode.replaceChildren(...lines(out.text).map(l => line(l, 0, false)))
   viewerActions.replaceChildren(...fileActions(v, out), el('button', {

@@ -3,9 +3,10 @@ import { getJson, Problem } from './net.js'
 const API = 'https://lrclib.net/api'
 const HEADERS = { 'Lrclib-Client': 'spotify-lrc (https://github.com/BigLongs0/spotify-lrc)' }
 
+// Algumas entradas vêm sem duração; elas ficam, com a duração desconhecida.
 function valid(r) {
   return r && Number.isInteger(r.id) && typeof r.trackName === 'string' && typeof r.artistName === 'string'
-    && Number.isFinite(r.duration)
+    && (r.duration == null || Number.isFinite(r.duration))
 }
 
 export async function search(params, signal) {
@@ -29,6 +30,12 @@ export function cleanTitle(title) {
   return title.replace(FEAT, '').replace(SUFFIX, '').trim() || title.trim()
 }
 
+// "Artista - Topic" é o canal automático do YouTube, de onde muita entrada foi enviada.
+const cleanArtist = name => name.replace(/\s+-\s+topic$/i, '').trim() || name.trim()
+
+// Para agrupar só vale o primeiro artista: "A & B", "A, B", "A / B", "A x B" e "A feat. B" contam como "A".
+const artistKey = name => norm(cleanArtist(name).split(/\s*(?:&|,|\/|;|\s+x\s+|\s+(?:feat|ft|featuring)\.?\s)\s*/i)[0])
+
 export const norm = s => (s ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
   .replace(/&/g, ' and ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 
@@ -38,63 +45,84 @@ export function splitQuery(q) {
   return m ? [m[1].trim(), m[2].trim()] : [null, q.trim()]
 }
 
-const lyricsOf = r => r.syncedLyrics || r.plainLyrics || ''
+const lyricsOf = r => (r.syncedLyrics || r.plainLyrics || '').trim()
+const known = d => Number.isFinite(d)
 
-// A letra que mais se repete entre as cópias costuma ser a versão certa.
-function consensus(entries) {
+// O valor mais repetido; no empate, o que apareceu primeiro.
+function mode(values) {
   const counts = new Map()
-  for (const r of entries) counts.set(lyricsOf(r), (counts.get(lyricsOf(r)) ?? 0) + 1)
-  let best = entries[0]
+  let best = null
   let top = 0
-  for (const r of entries) {
-    const n = counts.get(lyricsOf(r))
+  for (const v of values) {
+    const n = (counts.get(v) ?? 0) + 1
+    counts.set(v, n)
     if (n > top) {
-      best = r
+      best = v
       top = n
     }
   }
   return best
 }
 
-// Muita cópia no LRCLIB vem com o nome de uma coletânea ou playlist no lugar do álbum.
+// Muita cópia vem com o nome de uma coletânea, de uma playlist ou com "unknown" no lugar do álbum.
 // Com várias cópias, o álbum só entra quando duas concordam; com uma só, vale o dela.
+const NO_ALBUM = new Set(['none', 'null', 'unknown', 'undefined'])
+
 function albumOf(entries) {
-  const counts = new Map()
-  for (const r of entries) {
-    const a = r.albumName?.trim()
-    if (a && a !== 'None') counts.set(a, (counts.get(a) ?? 0) + 1)
-  }
-  let album = null
-  let top = entries.length === 1 ? 0 : 1
-  for (const [a, n] of counts) {
-    if (n > top) {
-      album = a
-      top = n
-    }
-  }
-  return album
+  const names = entries.map(r => r.albumName?.trim()).filter(a => a && !NO_ALBUM.has(a.toLowerCase()))
+  const album = mode(names)
+  if (!album) return null
+  return entries.length === 1 || names.filter(a => a === album).length > 1 ? album : null
 }
 
-// Junta as cópias da mesma gravação: mesmo artista e duração até 2 s de diferença.
+// A mesma gravação aparece várias vezes no LRCLIB, e a duração cadastrada varia muito entre as
+// cópias. Uma entrada entra num grupo do mesmo artista quando tem a mesma letra de alguma cópia
+// dele ou duração até 2 s de alguma cópia.
+function cluster(records) {
+  const groups = []
+  for (const r of records) {
+    const artist = artistKey(r.artistName)
+    const text = lyricsOf(r)
+    const g = groups.find(g => g.artist === artist && (
+      (text && g.texts.has(text))
+      || (known(r.duration) && g.entries.some(e => known(e.duration) && Math.abs(e.duration - r.duration) <= 2))))
+    if (g) {
+      g.entries.push(r)
+      if (text) g.texts.add(text)
+    } else {
+      groups.push({ artist, texts: new Set(text ? [text] : []), entries: [r] })
+    }
+  }
+  return groups
+}
+
+// Cada versão já sai com título, artista, álbum e duração resolvidos; quem mostra ou salva usa
+// esses campos, não os da entrada crua.
 export function versions(records, title) {
   const want = norm(cleanTitle(title))
-  const out = []
-  for (const r of records) {
-    const artist = norm(r.artistName)
-    let v = out.find(v => v.artist === artist && Math.abs(v.duration - r.duration) <= 2)
-    if (!v) out.push(v = { artist, duration: r.duration, entries: [] })
-    v.entries.push(r)
-  }
-  for (const v of out) {
-    const synced = v.entries.filter(r => r.syncedLyrics)
-    const plain = v.entries.filter(lyricsOf)
-    v.synced = synced.length
-    v.best = consensus(synced.length ? synced : plain.length ? plain : v.entries)
-    v.album = albumOf(v.entries)
-    v.duration = v.best.duration
-    const got = norm(cleanTitle(v.best.trackName))
+  const out = cluster(records).map(({ entries }) => {
+    const synced = entries.filter(r => r.syncedLyrics)
+    const withText = entries.filter(lyricsOf)
+    const pool = synced.length ? synced : withText.length ? withText : entries
+    const best = pool.find(r => lyricsOf(r) === mode(pool.map(lyricsOf)))
+    const same = entries.filter(r => lyricsOf(r) === lyricsOf(best))
+    const v = {
+      best,
+      entries,
+      synced: synced.length,
+      hasText: withText.length > 0,
+      title: mode(entries.map(r => r.trackName.trim())),
+      artistName: mode(entries.map(r => cleanArtist(r.artistName))),
+      album: albumOf(entries),
+      duration: mode(same.map(r => r.duration).filter(known).map(Math.round))
+        ?? mode(entries.map(r => r.duration).filter(known).map(Math.round)),
+    }
+    const got = norm(cleanTitle(v.title))
     const match = got === want ? 1000 : got && want.includes(got) ? 500 : 0
-    v.score = match + v.synced * 3 + plain.length + v.entries.length
-  }
-  return out.sort((a, b) => b.score - a.score)
+    v.score = match + v.synced * 3 + withText.length + entries.length
+    return v
+  })
+  // Versão sem letra não vira arquivo; só aparece quando nenhuma outra tem.
+  const useful = out.some(v => v.hasText) ? out.filter(v => v.hasText) : out
+  return useful.sort((a, b) => b.score - a.score)
 }

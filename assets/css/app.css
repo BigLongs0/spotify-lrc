@@ -115,6 +115,8 @@ html.viewing {
   display: grid;
   min-height: 212px;
   padding: 16px;
+  /* Sem isso a coluna cresce até a linha mais longa da lista, que não quebra. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
 }
 

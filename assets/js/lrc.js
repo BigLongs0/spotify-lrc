@@ -1,12 +1,15 @@
 const pad = n => String(n).padStart(2, '0')
 
+// Duração desconhecida vira texto vazio, para quem mostra poder pular o campo.
 export function clock(sec) {
-  const s = Math.round(sec ?? 0)
+  if (!Number.isFinite(sec)) return ''
+  const s = Math.round(sec)
   return `${Math.floor(s / 60)}:${pad(s % 60)}`
 }
 
 function stamp(sec) {
-  const s = Math.round(sec ?? 0)
+  if (!Number.isFinite(sec)) return null
+  const s = Math.round(sec)
   return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`
 }
 
@@ -18,7 +21,7 @@ export function file(version) {
   const body = (rec.syncedLyrics || rec.plainLyrics || '').replace(/\r\n?/g, '\n').trim()
   if (!body) return null
   if (!rec.syncedLyrics) return { ext: 'txt', text: `${body}\n` }
-  const head = [['ti', rec.trackName], ['ar', rec.artistName], ['al', version.album], ['length', stamp(rec.duration)]]
+  const head = [['ti', version.title], ['ar', version.artistName], ['al', version.album], ['length', stamp(version.duration)]]
     .filter(([, v]) => v)
     .map(([k, v]) => `[${k}:${tag(v)}]`)
   return { ext: 'lrc', text: `${head.join('\n')}\n[re:spotify-lrc]\n\n${body}\n` }
@@ -37,8 +40,8 @@ export function lines(text) {
   })
 }
 
-export function fileName(rec, ext) {
-  const base = `${rec.artistName} - ${rec.trackName}`
+export function fileName(version, ext) {
+  const base = `${version.artistName} - ${version.title}`
     .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
