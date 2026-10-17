@@ -1,0 +1,426 @@
+html.viewing {
+  overflow: hidden;
+}
+
+@keyframes drift {
+  to {
+    stroke-dashoffset: -9.01px;
+  }
+}
+
+@keyframes shake {
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.frame {
+  background: var(--fill);
+  border-radius: 12px;
+  box-shadow: var(--card);
+  padding: 4px;
+}
+
+.stage {
+  background: var(--background);
+  border-radius: 8px;
+  box-shadow: var(--card);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  min-height: 300px;
+  transition: box-shadow 150ms ease;
+}
+
+.bar {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  line-height: 18px;
+  min-height: 44px;
+  padding: 8px 16px;
+}
+
+.cover {
+  animation: fade 350ms ease both;
+  border-radius: 4px;
+  box-shadow: var(--card);
+  flex-shrink: 0;
+  height: 24px;
+  margin-inline-end: -2px;
+  object-fit: cover;
+  width: 24px;
+}
+
+.lead {
+  color: var(--primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.side {
+  color: var(--muted);
+  flex-shrink: 1;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
+.status.bad {
+  color: var(--red-11);
+}
+
+.bar.bottom {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  margin-inline-start: auto;
+}
+
+.body {
+  display: grid;
+  min-height: 212px;
+  padding: 16px;
+  place-items: center;
+}
+
+.picks,
+.code,
+.reason {
+  display: none;
+}
+
+.stage:is([data-state="pick"], [data-state="done"], [data-state="error"]) .lines {
+  display: none;
+}
+
+.lines {
+  height: auto;
+  max-width: 100%;
+  overflow: visible;
+  width: 280px;
+}
+
+.lines line {
+  stroke: var(--gray-a7);
+  stroke-dasharray: 0.01 9;
+  transition: stroke 300ms ease, stroke-dasharray 700ms var(--out);
+}
+
+.lines line:nth-child(odd) {
+  stroke: var(--gray-a6);
+}
+
+.lines line.on {
+  stroke: var(--gray-a9);
+  stroke-dasharray: 260 0.01;
+}
+
+/* Versões encontradas, dentro do palco. */
+.stage[data-state="pick"] .picks {
+  align-self: start;
+  animation: settle 350ms var(--out) both;
+  display: block;
+  justify-self: stretch;
+  margin-block: -8px;
+  margin-inline: -8px;
+}
+
+.picks .item {
+  border-radius: 6px;
+  padding-inline: 8px;
+}
+
+.picks .item .t {
+  flex-shrink: 1;
+}
+
+.item .by {
+  color: var(--muted);
+  flex-shrink: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item .meta .dim {
+  color: var(--gray-a7);
+}
+
+.picks .item[aria-current="true"] {
+  background: var(--fill);
+}
+
+.raw {
+  align-items: center;
+  animation: settle 350ms var(--out) both;
+  background: var(--fill-subtle);
+  border-radius: 9999px;
+  box-shadow: var(--ring);
+  display: flex;
+  gap: 4px;
+  padding: 4px 4px 4px 16px;
+  transition: box-shadow 150ms ease;
+  width: 100%;
+}
+
+.raw:focus-within {
+  box-shadow: 0 0 0 1px var(--gray-a8);
+}
+
+.raw.shake {
+  animation: shake 320ms var(--out);
+}
+
+.raw input {
+  background: none;
+  border: 0;
+  color: var(--primary);
+  flex: 1;
+  font: 13px/20px var(--mono);
+  min-width: 0;
+  outline: 0;
+  padding: 4px 0;
+}
+
+.raw input::placeholder {
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+.raw button {
+  background: var(--accent);
+  border-radius: 9999px;
+  color: var(--on-accent);
+  display: grid;
+  flex-shrink: 0;
+  height: 28px;
+  place-items: center;
+  transition: opacity 150ms ease, transform 160ms var(--out);
+  width: 28px;
+}
+
+.raw button:active {
+  transform: scale(0.95);
+}
+
+.raw button:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.code {
+  align-self: start;
+  color: var(--primary);
+  font: 13px/20px var(--mono);
+  justify-self: stretch;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  max-height: 200px;
+  overflow: hidden;
+  padding-inline: 4px;
+  white-space: pre;
+}
+
+.stage[data-state="done"] .code {
+  display: block;
+}
+
+.code.open {
+  cursor: pointer;
+}
+
+.code .ln {
+  animation: write 400ms var(--out) both;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:is(.code, .viewer-code) .ts {
+  color: var(--syn-nm);
+  margin-inline-end: 12px;
+}
+
+:is(.code, .viewer-code) .tag {
+  color: var(--syn-kw);
+}
+
+:is(.code, .viewer-code) .gap {
+  color: var(--gray-a7);
+}
+
+.reason {
+  background: var(--fill-subtle);
+  border-radius: 8px;
+  box-shadow: var(--card);
+  color: var(--secondary);
+  font: 13px/20px var(--mono);
+  justify-self: stretch;
+  max-height: 180px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 12px 16px;
+  white-space: pre-wrap;
+}
+
+.stage[data-state="error"] .reason {
+  animation: settle 350ms var(--out) both;
+  display: block;
+}
+
+.viewer {
+  animation: settle 180ms var(--out) both;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  position: fixed;
+  z-index: 40;
+}
+
+.viewer-bar {
+  align-items: center;
+  box-shadow: inset 0 -1px 0 var(--gray-a3);
+  display: flex;
+  flex-shrink: 0;
+  gap: 12px;
+  line-height: 18px;
+  min-height: 52px;
+  padding: 8px 12px 8px 20px;
+  user-select: none;
+}
+
+.viewer-bar .lead {
+  flex: 0 1 auto;
+}
+
+.viewer-bar .side {
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+.viewer-bar .actions {
+  align-items: center;
+}
+
+.viewer-body {
+  flex: 1;
+  outline: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.viewer-code {
+  color: var(--primary);
+  counter-reset: ln;
+  font: 13px/20px var(--mono);
+  margin-inline: auto;
+  max-width: 676px;
+  padding: 12px 20px 64px;
+}
+
+.viewer-code .ln {
+  display: flex;
+  white-space: pre-wrap;
+}
+
+.viewer-code .ln::before {
+  color: var(--gray-a7);
+  content: counter(ln);
+  counter-increment: ln;
+  flex-shrink: 0;
+  margin-inline-end: 16px;
+  text-align: right;
+  user-select: none;
+  width: 3ch;
+}
+
+.viewer-code .ts {
+  flex-shrink: 0;
+}
+
+@media (hover: hover) {
+  .picks .item:hover {
+    background: var(--fill);
+  }
+}
+
+@media (max-width: 479px) {
+  .viewer-bar .side {
+    display: none;
+  }
+
+  .viewer-bar .lead {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage[data-state="busy"] .lines line:not(.on) {
+    animation: drift 900ms linear infinite;
+  }
+
+  .lines line:nth-child(4n) {
+    animation-delay: -300ms;
+  }
+
+  .lines line:nth-child(3n) {
+    animation-delay: -600ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code .ln,
+  .raw,
+  .cover,
+  .viewer,
+  .stage[data-state="pick"] .picks,
+  .stage[data-state="error"] .reason {
+    animation-name: fade;
+  }
+
+  .raw.shake {
+    animation: none;
+  }
+
+  .lines line {
+    transition: stroke 300ms ease;
+  }
+}

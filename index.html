@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://*.spotifycdn.com https://i.scdn.co; connect-src https://lrclib.net https://open.spotify.com; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lrc</title>
+<meta name="description" content="Baixa a letra sincronizada (.lrc) de uma faixa do Spotify.">
+<meta name="theme-color" content="#111111">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<script src="assets/js/boot.js"></script>
+<script type="module" src="assets/js/main.js"></script>
+</head>
+<body>
+<div class="blur top" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<main class="page" id="page">
+  <header class="header">
+    <h1 class="title">
+      <svg class="mark" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M3 3.5h0.01M6.5 3.5H13"/>
+        <path d="M3 8h0.01M6.5 8H11"/>
+        <path d="M3 12.5h0.01M6.5 12.5H13"/>
+      </svg>
+      <span id="name">lrc</span>
+    </h1>
+    <div class="tools">
+      <a class="link" href="https://github.com/BigLongs0/spotify-lrc" rel="noopener">github</a>
+      <span class="lang" id="lang" role="group" aria-label="Idioma" data-en-aria-label="Language">
+        <button type="button" data-lang="pt" aria-pressed="true" lang="pt-BR" aria-label="Portugu&ecirc;s">PT</button>
+        <button type="button" data-lang="en" aria-pressed="false" lang="en" aria-label="English">EN</button>
+      </span>
+      <button type="button" class="icon" id="theme" aria-label="Mudar para o tema claro">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1Z"/></svg>
+        <svg class="off" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5ZM8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="tool" aria-label="Baixar letra" data-en-aria-label="Download lyrics">
+    <div class="frame">
+      <div class="stage" id="stage" data-state="idle">
+        <div class="bar">
+          <img class="cover" id="cover" alt="" hidden>
+          <span class="lead" id="lead"></span>
+          <span class="side" id="side"></span>
+          <button type="button" class="icon" id="expand" aria-label="Abrir a letra inteira" data-en-aria-label="Open the full lyrics" hidden>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg>
+          </button>
+        </div>
+        <div class="body">
+          <svg class="lines" id="lines" viewBox="0 0 280 124" fill="none" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+            <line x1="1.5" y1="8" x2="22" y2="8"/>
+            <line x1="36" y1="8" x2="168" y2="8"/>
+            <line x1="1.5" y1="26" x2="22" y2="26"/>
+            <line x1="36" y1="26" x2="232" y2="26"/>
+            <line x1="1.5" y1="44" x2="22" y2="44"/>
+            <line x1="36" y1="44" x2="128" y2="44"/>
+            <line x1="1.5" y1="62" x2="22" y2="62"/>
+            <line x1="36" y1="62" x2="206" y2="62"/>
+            <line x1="1.5" y1="80" x2="22" y2="80"/>
+            <line x1="36" y1="80" x2="150" y2="80"/>
+            <line x1="1.5" y1="98" x2="22" y2="98"/>
+            <line x1="36" y1="98" x2="188" y2="98"/>
+            <line x1="1.5" y1="116" x2="22" y2="116"/>
+            <line x1="36" y1="116" x2="96" y2="116"/>
+          </svg>
+          <div class="list picks" id="picks"></div>
+          <pre class="code" id="code" translate="no"></pre>
+          <pre class="reason" id="reason"></pre>
+        </div>
+        <div class="bar bottom">
+          <span class="status" id="status" aria-hidden="true"></span>
+          <span class="sr" id="live" role="status"></span>
+          <span class="actions" id="actions"></span>
+        </div>
+      </div>
+    </div>
+    <form class="raw" id="link" autocomplete="off" novalidate>
+      <input id="link-url" type="text" inputmode="url" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="link do Spotify ou artista - música" data-en-placeholder="Spotify link or artist - song" aria-label="Link do Spotify ou busca" data-en-aria-label="Spotify link or search" maxlength="512">
+      <button type="submit" id="link-go" aria-label="Buscar a letra" data-en-aria-label="Find the lyrics" disabled>
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </button>
+    </form>
+    <noscript><p class="foot">Esta p&aacute;gina precisa de JavaScript. / This page needs JavaScript.</p></noscript>
+  </section>
+
+  <section class="section" id="recent" hidden>
+    <div class="section-head">
+      <h2 data-en="Recent">Recentes</h2>
+      <button type="button" class="link" id="recent-clear" data-en="clear">limpar</button>
+    </div>
+    <div class="list" id="recent-list"></div>
+  </section>
+
+  <section class="section">
+    <h2 data-en="How it works">Como funciona</h2>
+    <div class="list">
+      <div class="item static"><span class="t" data-en="Track link">Link da faixa</span><span class="leader"></span><span class="meta" data-en="title via Spotify oEmbed">t&iacute;tulo pelo oEmbed do Spotify</span></div>
+      <div class="item static"><span class="t" data-en="Synced lyrics">Letra sincronizada</span><span class="leader"></span><span class="meta">LRCLIB</span></div>
+      <div class="item static"><span class="t" data-en="Versions">Vers&otilde;es</span><span class="leader"></span><span class="meta" data-en="grouped by artist and length">agrupadas por artista e dura&ccedil;&atilde;o</span></div>
+      <div class="item static"><span class="t" data-en="File">Arquivo</span><span class="leader"></span><span class="meta">.lrc <span class="wide">[ti] [ar] [al] [length]</span></span></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p data-en="Everything runs in your browser. Lyrics come from LRCLIB, an open database kept by its users; Spotify only provides the track title. Not affiliated with Spotify.">Tudo roda no seu navegador. As letras v&ecirc;m do LRCLIB, um banco aberto mantido pelos usu&aacute;rios; o Spotify s&oacute; fornece o t&iacute;tulo da faixa. Sem v&iacute;nculo com o Spotify.</p>
+  </footer>
+</main>
+
+<div class="blur bottom" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-name" hidden>
+  <div class="viewer-bar">
+    <span class="lead" id="viewer-name"></span>
+    <span class="side" id="viewer-meta"></span>
+    <span class="actions" id="viewer-actions"></span>
+  </div>
+  <div class="viewer-body" id="viewer-body" tabindex="0">
+    <div class="viewer-code" id="viewer-code" translate="no"></div>
+  </div>
+</div>
+</body>
+</html>
