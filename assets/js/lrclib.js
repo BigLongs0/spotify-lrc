@@ -1,4 +1,5 @@
 import { getJson, Problem } from './net.js'
+import { artistKey, cleanArtist, cleanTitle, norm } from './text.js'
 
 const API = 'https://lrclib.net/api'
 const HEADERS = { 'Lrclib-Client': 'spotify-lrc (https://github.com/BigLongs0/spotify-lrc)' }
@@ -20,29 +21,6 @@ export async function byId(id, signal) {
   const data = await getJson(`${API}/get/${id}`, { signal, headers: HEADERS, source: 'LRCLIB' })
   if (!valid(data)) throw new Problem('api', 'LRCLIB')
   return data
-}
-
-const FEAT = /\s*[([](?:feat|ft|with|com|part)\.?\s[^)\]]*[)\]]/gi
-const SUFFIX = /\s+[-–—]\s+.*$/
-
-// "Música - Remastered 2011 (feat. X)" vira "Música" para a busca casar com mais entradas.
-export function cleanTitle(title) {
-  return title.replace(FEAT, '').replace(SUFFIX, '').trim() || title.trim()
-}
-
-// "Artista - Topic" é o canal automático do YouTube, de onde muita entrada foi enviada.
-const cleanArtist = name => name.replace(/\s+-\s+topic$/i, '').trim() || name.trim()
-
-// Para agrupar só vale o primeiro artista: "A & B", "A, B", "A / B", "A x B" e "A feat. B" contam como "A".
-const artistKey = name => norm(cleanArtist(name).split(/\s*(?:&|,|\/|;|\s+x\s+|\s+(?:feat|ft|featuring)\.?\s)\s*/i)[0])
-
-export const norm = s => (s ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
-  .replace(/&/g, ' and ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
-
-// "artista - música" vira [artista, música]; sem o traço, é só texto livre.
-export function splitQuery(q) {
-  const m = /^(.+?)\s+[-–—]\s+(.+)$/.exec(q.trim())
-  return m ? [m[1].trim(), m[2].trim()] : [null, q.trim()]
 }
 
 const lyricsOf = r => (r.syncedLyrics || r.plainLyrics || '').trim()
@@ -96,9 +74,29 @@ function cluster(records) {
   return groups
 }
 
+// Quando a capa identificou a gravação, o artista e a duração dela pesam mais que a contagem de
+// cópias: é o que resolve um título com muitos covers, onde o mais popular no LRCLIB costuma não
+// ser o que foi colado.
+const ARTIST = 800
+const CLOSE = 400
+const NEAR = 150
+
+function bonus(v, hint) {
+  if (!hint) return 0
+  let n = 0
+  if (hint.artist && artistKey(v.artistName) === artistKey(hint.artist)) n += ARTIST
+  if (known(hint.duration) && known(v.duration)) {
+    const off = Math.abs(v.duration - hint.duration)
+    if (off <= 3) n += CLOSE
+    else if (off <= 8) n += NEAR
+  }
+  return n
+}
+
 // Cada versão já sai com título, artista, álbum e duração resolvidos; quem mostra ou salva usa
-// esses campos, não os da entrada crua.
-export function versions(records, title) {
+// esses campos, não os da entrada crua. `hint` é o resultado da identificação pela capa, quando
+// houve: só muda a ordem, nunca o conteúdo das versões.
+export function versions(records, title, hint = null) {
   const want = norm(cleanTitle(title))
   const out = cluster(records).map(({ entries }) => {
     const synced = entries.filter(r => r.syncedLyrics)
@@ -119,7 +117,7 @@ export function versions(records, title) {
     }
     const got = norm(cleanTitle(v.title))
     const match = got === want ? 1000 : got && want.includes(got) ? 500 : 0
-    v.score = match + v.synced * 3 + withText.length + entries.length
+    v.score = match + bonus(v, hint) + v.synced * 3 + withText.length + entries.length
     return v
   })
   // Versão sem letra não vira arquivo; só aparece quando nenhuma outra tem.

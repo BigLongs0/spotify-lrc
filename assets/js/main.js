@@ -1,10 +1,12 @@
 import { chrome } from './chrome.js'
 import { $, el, icon, ICON, root } from './dom.js'
 import { onLang, read, store, t } from './i18n.js'
+import { identify } from './identify.js'
 import { clock, file, fileName, lines } from './lrc.js'
-import { byId, cleanTitle, norm, search, splitQuery, versions } from './lrclib.js'
+import { byId, search, versions } from './lrclib.js'
 import { Problem } from './net.js'
 import { linkKind, track, trackId } from './spotify.js'
+import { artistKey, cleanTitle, norm, splitQuery } from './text.js'
 
 const stage = $('stage')
 const lead = $('lead')
@@ -216,14 +218,29 @@ async function find(text) {
     found.title = title
     busy(title, 'busy.search', 10)
 
-    // Primeiro a busca por campo; se vier vazia, a busca livre, que tolera mais diferença de grafia.
     const plain = cleanTitle(title)
+    // A identificação pela capa roda junto com a busca. Ela só melhora a ordem das versões,
+    // então uma falha dela não derruba o resto.
+    const naming = found.thumb
+      ? identify({ title, thumb: found.thumb }, signal).catch(() => null)
+      : Promise.resolve(null)
+
+    // Primeiro a busca por campo; se vier vazia, a busca livre, que tolera mais diferença de grafia.
     const first = artist ? { track_name: plain, artist_name: artist } : id ? { track_name: plain } : { q: title }
     const loose = { q: artist ? `${artist} ${plain}` : plain }
     let records = await search(first, signal)
     if (!records.length && loose.q !== first.q) records = await search(loose, signal)
 
-    found.versions = versions(records, title)
+    // Buscar só pelo título pode não trazer nenhuma cópia do artista identificado; aí vale uma
+    // busca dirigida, porque é justamente a versão que foi colada.
+    const hint = await naming
+    if (hint && !records.some(r => artistKey(r.artistName) === artistKey(hint.artist))) {
+      const extra = await search({ track_name: plain, artist_name: hint.artist }, signal).catch(() => [])
+      const have = new Set(records.map(r => r.id))
+      records = [...records, ...extra.filter(r => !have.has(r.id))]
+    }
+
+    found.versions = versions(records, title, hint)
     if (!found.versions.length) throw new Problem('none')
     history.replaceState(null, '', id ? `?track=${id}` : location.pathname)
     show(found.versions.find(v => v.synced) ?? found.versions.find(v => v.hasText) ?? found.versions[0])

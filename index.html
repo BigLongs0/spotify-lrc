@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://*.spotifycdn.com https://i.scdn.co; connect-src https://lrclib.net https://open.spotify.com; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://*.spotifycdn.com https://i.scdn.co https://*.mzstatic.com; connect-src https://lrclib.net https://open.spotify.com https://itunes.apple.com; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lrc</title>
 <meta name="description" content="Baixa a letra sincronizada (.lrc) de uma faixa do Spotify.">
@@ -99,7 +99,8 @@
   <section class="section">
     <h2 data-en="How it works">Como funciona</h2>
     <div class="list">
-      <div class="item static"><span class="t" data-en="Track link">Link da faixa</span><span class="leader"></span><span class="meta" data-en="title via Spotify oEmbed">t&iacute;tulo pelo oEmbed do Spotify</span></div>
+      <div class="item static"><span class="t" data-en="Track link">Link da faixa</span><span class="leader"></span><span class="meta" data-en="title and cover via Spotify oEmbed">t&iacute;tulo e capa pelo oEmbed do Spotify</span></div>
+      <div class="item static"><span class="t" data-en="Artist and length">Artista e dura&ccedil;&atilde;o</span><span class="leader"></span><span class="meta" data-en="cover matched against iTunes">capa casada contra o iTunes</span></div>
       <div class="item static"><span class="t" data-en="Synced lyrics">Letra sincronizada</span><span class="leader"></span><span class="meta">LRCLIB</span></div>
       <div class="item static"><span class="t" data-en="Versions">Vers&otilde;es</span><span class="leader"></span><span class="meta" data-en="grouped by artist and length">agrupadas por artista e dura&ccedil;&atilde;o</span></div>
       <div class="item static"><span class="t" data-en="File">Arquivo</span><span class="leader"></span><span class="meta">.lrc <span class="wide">[ti] [ar] [al] [length]</span></span></div>
@@ -107,7 +108,7 @@
   </section>
 
   <footer class="foot">
-    <p data-en="Everything runs in your browser. Lyrics come from LRCLIB, an open database kept by its users; Spotify only provides the track title. Not affiliated with Spotify.">Tudo roda no seu navegador. As letras v&ecirc;m do LRCLIB, um banco aberto mantido pelos usu&aacute;rios; o Spotify s&oacute; fornece o t&iacute;tulo da faixa. Sem v&iacute;nculo com o Spotify.</p>
+    <p data-en="Everything runs in your browser. Lyrics come from LRCLIB, an open database kept by its users; Spotify provides the title and the cover, and the iTunes catalog says whose recording it is. Not affiliated with Spotify, LRCLIB or Apple.">Tudo roda no seu navegador. As letras v&ecirc;m do LRCLIB, um banco aberto mantido pelos usu&aacute;rios; o Spotify fornece o t&iacute;tulo e a capa, e o cat&aacute;logo do iTunes diz de quem &eacute; a grava&ccedil;&atilde;o. Sem v&iacute;nculo com o Spotify, o LRCLIB ou a Apple.</p>
   </footer>
 </main>
 
